@@ -56,7 +56,10 @@ namespace ServicePrivilegeEscalation {
                 try {
                     if (current_is_file) {
                         current_rules = File
-                            .GetAccessControl(path: current_path)
+                            .GetAccessControl(
+                                path: current_path,
+                                includeSections: AccessControlSections.Access
+                            )
                             .GetAccessRules(
                                 includeExplicit: true,
                                 includeInherited: true,
@@ -65,7 +68,10 @@ namespace ServicePrivilegeEscalation {
                         ;
                     } else {
                         current_rules = Directory
-                            .GetAccessControl(path: current_path)
+                            .GetAccessControl(
+                                path: current_path,
+                                includeSections: AccessControlSections.Access
+                            )
                             .GetAccessRules(
                                 includeExplicit: true,
                                 includeInherited: true,
@@ -82,7 +88,9 @@ namespace ServicePrivilegeEscalation {
 
                 try {
                     parent_rules = Directory
-                        .GetAccessControl(path: parent_path)
+                        .GetAccessControl(
+                            path: parent_path, includeSections: AccessControlSections.Access
+                        )
                         .GetAccessRules(
                             includeExplicit: true,
                             includeInherited: true,
@@ -139,11 +147,6 @@ namespace ServicePrivilegeEscalation {
                             rule: rule,
                             right: FileSystemRights.CreateFiles
                         );
-
-                        if (CheckFileSystemAccessRight(rule: rule, right: FileSystemRights.WriteData)) {
-                            can_create_directories = true;
-                            can_create_files = true;
-                        }
                     }
                 }
 
