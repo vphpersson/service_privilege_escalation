@@ -36,7 +36,6 @@ namespace ServicePrivilegeEscalation {
             return (right & rule.FileSystemRights) == right;
         }
 
-
         // TODO: Service executable paths at external locations. Check if volume is mounted?
 
         static List<AttackContext> CheckPath(string executable_path, string path_name) {
@@ -55,6 +54,21 @@ namespace ServicePrivilegeEscalation {
 
                 try {
                     if (current_is_file) {
+                        var current_name = Path.GetFileName(path: current_path);
+                        if (current_name.Contains(' ')) {
+                            var current_name_parts = current_name.Split(separator: ' ');
+                            for (int i = 1; i <= current_name_parts.Length; i++) {
+                                var current_path_candidate = Path.Combine(
+                                    path1: parent_path,
+                                    path2: Path.Combine(paths: new ArraySegment<String>(array: current_name_parts, offset: 0, count: i).ToArray<String>())
+                                );
+                                if (File.Exists(path: current_path_candidate)) {
+                                    current_path = current_path_candidate;
+                                    break;
+                                }
+                            }
+                        }
+
                         current_rules = File
                             .GetAccessControl(
                                 path: current_path,
@@ -89,7 +103,8 @@ namespace ServicePrivilegeEscalation {
                 try {
                     parent_rules = Directory
                         .GetAccessControl(
-                            path: parent_path, includeSections: AccessControlSections.Access
+                            path: parent_path,
+                            includeSections: AccessControlSections.Access
                         )
                         .GetAccessRules(
                             includeExplicit: true,
@@ -195,7 +210,7 @@ namespace ServicePrivilegeEscalation {
 
                 var path_name = result["PathName"].ToString();
 
-                Match executable_path_match = Regex.Match(
+                var executable_path_match = Regex.Match(
                     input: path_name,
                     pattern: @"^.*([a-z]:\\.*\\[^<>:/\\|?*""]+).*$",
                     options: RegexOptions.IgnoreCase
@@ -206,7 +221,7 @@ namespace ServicePrivilegeEscalation {
                     continue;
                 }
 
-                String executable_path = executable_path_match.Groups[1].ToString();
+                var executable_path = executable_path_match.Groups[1].ToString();
                 var attack_contexts = CheckPath(executable_path: executable_path, path_name: path_name);
 
                 if (attack_contexts.Count != 0) {
